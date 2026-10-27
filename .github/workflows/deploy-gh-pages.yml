@@ -6,6 +6,20 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to execute'
+        required: true
+        default: 'test_and_deploy'
+        type: choice
+        options:
+          - 'test_and_deploy'
+          - 'test_only'
+      release_note:
+        description: 'Optional manual release notes / trigger reason'
+        required: false
+        default: 'Manual workflow dispatch'
+        type: string
 
 permissions:
   contents: write
@@ -25,7 +39,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
       - name: TypeScript Typecheck
         run: npx tsc --noEmit
@@ -36,7 +50,9 @@ jobs:
   deploy:
     name: Build & Deploy Static Web Bundle
     needs: test
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
+    if: |
+      (github.event_name != 'workflow_dispatch' || inputs.action != 'test_only') &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -49,7 +65,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
       - name: Build Static Web Bundle
         run: npx expo export -p web
@@ -59,4 +75,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-
+          keep_files: false
