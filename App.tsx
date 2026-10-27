@@ -102,27 +102,10 @@ export default function App() {
     initializeAutoSync(queryClient);
   }, []);
 
-  const linking = {
-    prefixes: ['http://localhost:5001/parcelpulse', 'https://ritikbansal07.github.io/parcelpulse'],
-    config: {
-      screens: {
-        MainTabs: {
-          screens: {
-            ManifestTab: '',
-            ActiveTab: 'active',
-            OutboxTab: 'outbox',
-          },
-        },
-        OrderDetail: 'order/:orderId',
-        OutboxInspector: 'queue',
-      },
-    },
-  };
-
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <NavigationContainer linking={linking as any}>
+        <NavigationContainer>
           <StatusBar style="light" />
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="MainTabs" component={MainTabNavigator} />
