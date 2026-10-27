@@ -20,6 +20,9 @@ export const INITIAL_DRIVER_SHIFT: DriverShift = {
   completedStops: 2,
   totalStops: 8,
   shiftStartTime: '08:30 AM (Slot 1)',
+  cashInBagInr: 1250,
+  upiCollectedInr: 3499,
+  pendingCodInr: 2349,
 };
 
 export const INITIAL_ORDERS: Order[] = [
@@ -338,6 +341,10 @@ export const INITIAL_ORDERS: Order[] = [
     },
     status: 'DELIVERED',
     recipientSignature: 'Sneha K. (Verified Delivery OTP 9102)',
+    podPhotoUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=80',
+    podPhotoType: 'DOORSTEP',
+    podPhotoTimestamp: '09:20 AM',
+    verifiedOtp: '9102',
     packageDetails: {
       weightKg: 0.9,
       dimensions: '18x12x8 cm',

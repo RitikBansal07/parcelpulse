@@ -69,6 +69,10 @@ export interface Order {
   failureNote?: string;
   signatureRequired: boolean;
   recipientSignature?: string;
+  podPhotoUrl?: string;
+  podPhotoType?: 'DOORSTEP' | 'HANDOVER' | 'SECURITY_DESK';
+  podPhotoTimestamp?: string;
+  verifiedOtp?: string;
   estimatedArrivalMin: number;
   distanceKm: number;
   currentStepIndex: number;
@@ -85,6 +89,9 @@ export interface TransitionEvent {
   failureReason?: FailureReason;
   failureNote?: string;
   recipientSignature?: string;
+  podPhotoUrl?: string;
+  podPhotoType?: 'DOORSTEP' | 'HANDOVER' | 'SECURITY_DESK';
+  verifiedOtp?: string;
   driverLocation?: LocationCoordinate;
 }
 
@@ -110,4 +117,9 @@ export interface DriverShift {
   completedStops: number;
   totalStops: number;
   shiftStartTime: string;
+  cashInBagInr: number;
+  upiCollectedInr: number;
+  pendingCodInr: number;
+  settlementVoucherId?: string;
+  settledAt?: string;
 }

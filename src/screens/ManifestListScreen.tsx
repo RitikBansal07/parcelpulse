@@ -19,6 +19,8 @@ import { NetworkControlBar } from '../components/domain/NetworkControlBar';
 import { ScreenState } from '../components/ui/ScreenState';
 import { mockApi } from '../api/mockApi';
 import { useQueryClient } from '@tanstack/react-query';
+import { BarcodeScannerModal } from '../components/domain/BarcodeScannerModal';
+import { CodCashLedgerModal } from '../components/domain/CodCashLedgerModal';
 
 type FilterType = 'ALL' | 'ACTIVE' | 'COMPLETED';
 
@@ -26,6 +28,8 @@ export const ManifestListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [cashLedgerVisible, setCashLedgerVisible] = useState(false);
 
   const {
     data: orders = [],
@@ -150,6 +154,34 @@ export const ManifestListScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Driver Quick Actions: Barcode Scanner & COD Cash Bag */}
+      <View style={styles.quickActionBar}>
+        <TouchableOpacity
+          style={styles.scannerActionBtn}
+          onPress={() => setScannerVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Scan Waybill Barcode or QR"
+          testID="open-scanner-btn"
+        >
+          <Ionicons name="barcode-outline" size={17} color="#FFFFFF" />
+          <Text style={styles.scannerActionText}>Scan Waybill</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.cashBagActionBtn}
+          onPress={() => setCashLedgerVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Open COD Cash Ledger"
+          testID="open-cash-bag-btn"
+        >
+          <Ionicons name="cash" size={17} color="#10B981" />
+          <Text style={styles.cashBagActionText}>
+            Cash Bag: ₹{(shift?.cashInBagInr || 1250).toLocaleString('en-IN')}
+          </Text>
+          <Ionicons name="chevron-forward" size={14} color="#94A3B8" />
+        </TouchableOpacity>
+      </View>
+
       {/* Active Delivery Highlight Banner */}
       {activeOrder && activeFilter !== 'COMPLETED' && (
         <ActiveOrderBanner
@@ -220,6 +252,24 @@ export const ManifestListScreen: React.FC = () => {
           }
         />
       </ScreenState>
+
+      {/* Barcode & QR Scanner Viewfinder Modal */}
+      <BarcodeScannerModal
+        visible={scannerVisible}
+        orders={orders}
+        onClose={() => setScannerVisible(false)}
+        onScanSuccess={(scannedId) => {
+          navigation.navigate('OrderDetail', { orderId: scannedId });
+        }}
+      />
+
+      {/* COD Cash Bag Ledger & Shift Settlement Modal */}
+      <CodCashLedgerModal
+        visible={cashLedgerVisible}
+        orders={orders}
+        shift={shift}
+        onClose={() => setCashLedgerVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -269,6 +319,51 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#64748B',
     marginTop: 1,
+  },
+  quickActionBar: {
+    flexDirection: 'row',
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+  },
+  scannerActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 6,
+    shadowColor: '#0284C7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  scannerActionText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  cashBagActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  cashBagActionText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#34D399',
   },
   filterRow: {
     flexDirection: 'row',

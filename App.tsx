@@ -97,6 +97,8 @@ function MainTabNavigator() {
   );
 }
 
+const isWeb = Platform.OS === 'web';
+
 export default function App() {
   useEffect(() => {
     initializeAutoSync(queryClient);
@@ -105,21 +107,48 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <NavigationContainer>
-          <StatusBar style="light" />
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-            <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
-            <Stack.Screen name="OutboxInspector" component={OutboxInspectorScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <View style={isWeb ? styles.webWrapper : styles.nativeWrapper}>
+          <View style={isWeb ? styles.webAppContainer : styles.nativeAppContainer}>
+            <NavigationContainer>
+              <StatusBar style="light" />
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+                <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+                <Stack.Screen name="OutboxInspector" component={OutboxInspectorScreen} />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </View>
+        </View>
       </QueryClientProvider>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  nativeWrapper: {
     flex: 1,
+    backgroundColor: '#0F172A',
+  },
+  nativeAppContainer: {
+    flex: 1,
+  },
+  webWrapper: {
+    flex: 1,
+    backgroundColor: '#090D16',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  webAppContainer: {
+    width: '100%',
+    maxWidth: 580,
+    height: '100%',
+    backgroundColor: '#F1F5F9',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.45,
+    shadowRadius: 28,
   },
 });

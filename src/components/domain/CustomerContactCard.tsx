@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '../../types/domain';
 import { Button } from '../ui/Button';
@@ -102,9 +102,27 @@ export const CustomerContactCard: React.FC<CustomerContactCardProps> = ({ order 
 
       {/* Address Details with Indian Landmark */}
       <View style={styles.addressBox}>
-        <View style={styles.addressHeader}>
-          <Ionicons name="location-sharp" size={16} color="#0284C7" />
-          <Text style={styles.addressTitle}>Destination Address</Text>
+        <View style={styles.addressHeaderRow}>
+          <View style={styles.addressHeader}>
+            <Ionicons name="location-sharp" size={16} color="#0284C7" />
+            <Text style={styles.addressTitle}>Destination Address</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.navLinkBtn}
+            onPress={() => {
+              const lat = order.deliveryAddress.lat;
+              const lng = order.deliveryAddress.lng;
+              const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+              Linking.openURL(url);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Open Google Maps navigation"
+            testID="address-navigate-btn"
+          >
+            <Ionicons name="navigate-outline" size={13} color="#0284C7" />
+            <Text style={styles.navLinkText}>Google Maps</Text>
+            <Ionicons name="open-outline" size={11} color="#0284C7" />
+          </TouchableOpacity>
         </View>
         <Text style={styles.addressMain}>
           {order.deliveryAddress.street}
@@ -315,11 +333,30 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     marginBottom: 10,
   },
+  addressHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   addressHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 4,
+  },
+  navLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  navLinkText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284C7',
   },
   addressTitle: {
     fontSize: 11,

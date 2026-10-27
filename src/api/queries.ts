@@ -101,3 +101,15 @@ export function useTransitionMutation() {
   });
 }
 
+export function useSettleShiftCodMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      return await mockApi.settleShiftCod();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['driverShift'] });
+    },
+  });
+}
+

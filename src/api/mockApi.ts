@@ -104,6 +104,14 @@ export class MockParcelPulseApi implements IParcelPulseApi {
     ).length;
     this.shift.completedStops = completedCount;
 
+    // If newly delivered COD parcel, reconcile cash in bag
+    if (event.toStatus === 'DELIVERED' && currentOrder.status !== 'DELIVERED') {
+      if (currentOrder.packageDetails.paymentMode === 'COD' && currentOrder.packageDetails.codAmountInr) {
+        this.shift.cashInBagInr = (this.shift.cashInBagInr || 0) + currentOrder.packageDetails.codAmountInr;
+        this.shift.pendingCodInr = Math.max(0, (this.shift.pendingCodInr || 0) - currentOrder.packageDetails.codAmountInr);
+      }
+    }
+
     try {
       await AsyncStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(this.orders));
       await AsyncStorage.setItem(STORAGE_KEY_SHIFT, JSON.stringify(this.shift));
@@ -124,6 +132,24 @@ export class MockParcelPulseApi implements IParcelPulseApi {
     await this.ensureInitialized();
     await this.delay(80);
     this.shift.activeShift = !this.shift.activeShift;
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_SHIFT, JSON.stringify(this.shift));
+    } catch {
+      // Fallback
+    }
+    return { ...this.shift };
+  }
+
+  async settleShiftCod(): Promise<DriverShift> {
+    await this.ensureInitialized();
+    await this.delay(100);
+    const voucherId = `VCH-KOR-${Date.now().toString().slice(-6)}`;
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    this.shift = {
+      ...this.shift,
+      settlementVoucherId: voucherId,
+      settledAt: nowStr,
+    };
     try {
       await AsyncStorage.setItem(STORAGE_KEY_SHIFT, JSON.stringify(this.shift));
     } catch {

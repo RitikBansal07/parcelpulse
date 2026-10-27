@@ -34,15 +34,32 @@ Tailored for **Indian last-mile logistics operations** (Delhivery, Shadowfax, Bl
 - **Live Traffic Layer**: Color-coded traffic flow indicators along arterial corridors (green free-flow, yellow moderate junction, red bottleneck).
 - **Bottom Navigation ETA Dashboard**: Big bold green ETA (**`12 min`** in `#188038`), remaining km (`4.8 km`), arrival clock time (`10:35 AM`), and fastest route confirmation.
 
-### 3. Offline-First Synchronization Engine
+### 3. Waybill Barcode & QR Scanner
+- **Live Optical Viewfinder**: Camera viewport with animated laser scan bar, corner bracket reticles, and flashlight/torch toggle.
+- **Instant Manifest Match**: Tap quick barcode chips (`DEL-BLR-9821031`) or enter tracking/parcel codes manually to jump immediately into the corresponding order.
+- **Accessible from Top Bar**: Dedicated `[ Scan Waybill ]` action directly in the driver shift header.
+
+### 4. Proof of Delivery (POD) Photo Capture & Geotag Dossier
+- **Doorstep & Handover Photo Proof**: Capture or retake delivery snapshots (Doorstep dropoff, direct handover, society guard desk).
+- **Delivery OTP Verification**: Interactive 4-digit customer OTP validation (`4821`, `9102`) before completing delivery.
+- **POD Audit Dossier**: Displayed on delivered orders with photo preview, GPS watermark coordinates, signer signature, and timestamp.
+
+### 5. COD Cash Bag Ledger & Hub Shift Settlement
+- **Cash in Hand Ledger**: Live tracking of ₹ cash collected today across delivered COD parcels vs. pending on-road collections and UPI prepaid orders.
+- **Denomination Breakdown**: Denomination breakdown summary (₹500, ₹200, ₹100 notes & coins).
+- **Hub Cash Deposit Voucher**: 1-tap "Deposit Cash at Hub #12 Cash Desk" generating a digitally audited settlement receipt voucher (`VCH-KOR-XXXXXX`).
+
+### 6. Offline-First Synchronization Engine
 - **Persistent Outbox Queue**: All state transitions made in dead zones, elevators, or basement parking garages persist in local storage via `AsyncStorage` (`localStorage` on Web).
 - **Automated FIFO Replay**: Sequential outbox worker drains pending mutations in FIFO order as soon as network reconnection is detected.
 - **Simulated Network Modes**: Toggle between **`ONLINE`**, **`OFFLINE`**, and **`FLAKY_500`** (simulating 500 upstream timeouts) directly from the header toolbar.
 - **Outbox Inspector**: Dedicated screen to monitor queue depth, retry attempt counts, last error diagnostics, and synced audit logs.
 
-### 4. Cross-Platform Mapping (`react-native-maps`)
+### 7. Cross-Platform Mapping & Responsive Design (iOS, Android, Web)
 - **Native (iOS/Android)**: Uses `react-native-maps` with native map providers, polyline routing, and custom markers.
 - **Web (Browser / GitHub Pages)**: Uses a responsive vector map canvas with zero runtime API keys required.
+- **Desktop Handheld Shell**: Auto-centers as a sleek handheld logistics terminal on desktop web, expanding to 100% full width on mobile screens and native devices.
+- **External Google Maps Deep-Link**: Native intent / browser URL linking directly to Google Maps driving navigation for destination coordinates.
 
 ---
 

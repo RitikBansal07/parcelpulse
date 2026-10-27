@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '../../types/domain';
 import { calculateRouteProgress } from '../../domain/routeSimulator';
@@ -109,11 +109,20 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
         </View>
 
         <TouchableOpacity
-          style={styles.closeNavBtn}
+          style={styles.openGoogleMapsBtn}
+          onPress={() => {
+            const lat = order.deliveryAddress.lat;
+            const lng = order.deliveryAddress.lng;
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+            Linking.openURL(url);
+          }}
           accessibilityRole="button"
-          accessibilityLabel="Route overview"
+          accessibilityLabel="Open in Google Maps"
+          testID="open-google-maps-btn"
         >
-          <Ionicons name="search" size={18} color="#5F6368" />
+          <Ionicons name="navigate" size={14} color="#FFFFFF" />
+          <Text style={styles.openGoogleMapsText}>Maps App</Text>
+          <Ionicons name="open-outline" size={12} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -248,6 +257,26 @@ const styles = StyleSheet.create({
   dotSeparator: {
     fontSize: 11,
     color: '#BDC1C6',
+  },
+  openGoogleMapsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A73E8', // Google Blue
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+    marginLeft: 8,
+    shadowColor: '#1A73E8',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  openGoogleMapsText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   closeNavBtn: {
     width: 38,

@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -34,6 +35,10 @@ export const OrderDetailScreen: React.FC = () => {
   // Modal States
   const [signatureModalVisible, setSignatureModalVisible] = useState(false);
   const [signerName, setSignerName] = useState('');
+  const [podPhotoType, setPodPhotoType] = useState<'DOORSTEP' | 'HANDOVER' | 'SECURITY_DESK'>('DOORSTEP');
+  const [podPhotoUrl, setPodPhotoUrl] = useState<string | null>(null);
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
   const [failureModalVisible, setFailureModalVisible] = useState(false);
   const [selectedFailureReason, setSelectedFailureReason] = useState<FailureReason>('CUSTOMER_UNAVAILABLE');
   const [failureNote, setFailureNote] = useState('');
@@ -72,6 +77,18 @@ export const OrderDetailScreen: React.FC = () => {
       return;
     }
 
+    // OTP validation if order has OTP code and driver entered something
+    if (order.packageDetails.otpCode && enteredOtp.trim()) {
+      if (enteredOtp.trim() !== order.packageDetails.otpCode) {
+        setOtpError(`Incorrect OTP. Customer code is ${order.packageDetails.otpCode}`);
+        return;
+      }
+    }
+
+    const finalPhoto =
+      podPhotoUrl ||
+      'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=80';
+
     setSignatureModalVisible(false);
     executeTransition({
       orderId: order.id,
@@ -79,8 +96,14 @@ export const OrderDetailScreen: React.FC = () => {
       toStatus: 'DELIVERED',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       recipientSignature: `${signerName.trim()} (Signed on handheld)`,
+      podPhotoUrl: finalPhoto,
+      podPhotoType: podPhotoType,
+      verifiedOtp: enteredOtp.trim() || order.packageDetails.otpCode,
     });
     setSignerName('');
+    setPodPhotoUrl(null);
+    setEnteredOtp('');
+    setOtpError(null);
   };
 
   const handleConfirmFailure = () => {
@@ -193,6 +216,54 @@ export const OrderDetailScreen: React.FC = () => {
               )}
             </View>
 
+            {/* Proof of Delivery (POD) Dossier Card */}
+            {(order.status === 'DELIVERED' || !!order.podPhotoUrl) && (
+              <View style={styles.podDossierCard} testID="pod-dossier-card">
+                <View style={styles.podDossierHeader}>
+                  <View style={styles.podDossierTitleRow}>
+                    <Ionicons name="shield-checkmark" size={18} color="#059669" />
+                    <Text style={styles.podDossierTitle}>Proof of Delivery (POD) Dossier</Text>
+                  </View>
+                  <View style={styles.podTypeChip}>
+                    <Text style={styles.podTypeChipText}>
+                      {order.podPhotoType || 'DOORSTEP'}
+                    </Text>
+                  </View>
+                </View>
+
+                {order.podPhotoUrl ? (
+                  <View style={styles.podImageWrapper}>
+                    <Image
+                      source={{ uri: order.podPhotoUrl }}
+                      style={styles.podImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.podWatermark}>
+                      <Ionicons name="location-sharp" size={12} color="#FFFFFF" />
+                      <Text style={styles.podWatermarkText} numberOfLines={1}>
+                        {order.deliveryAddress.locality || order.deliveryAddress.city} • {order.podPhotoTimestamp || 'Recorded'} • GPS Geotagged
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                <View style={styles.podDetailsRow}>
+                  <View style={styles.podDetailCol}>
+                    <Text style={styles.podDetailLabel}>Signed by</Text>
+                    <Text style={styles.podDetailVal}>{order.recipientSignature || 'Direct Handover'}</Text>
+                  </View>
+                  {(order.verifiedOtp || order.packageDetails.otpCode) ? (
+                    <View style={styles.podDetailCol}>
+                      <Text style={styles.podDetailLabel}>Customer OTP</Text>
+                      <Text style={styles.podDetailValOtp}>
+                        ✓ {order.verifiedOtp || order.packageDetails.otpCode} Verified
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+            )}
+
             {/* Operational Action CTA Sheet */}
             <StatusActionSheet
               order={order}
@@ -225,7 +296,7 @@ export const OrderDetailScreen: React.FC = () => {
         ) : null}
       </ScreenState>
 
-      {/* Signature Proof of Delivery Modal */}
+      {/* Proof of Delivery (POD) & Handheld Signature Modal */}
       <Modal
         visible={signatureModalVisible}
         transparent
@@ -235,33 +306,127 @@ export const OrderDetailScreen: React.FC = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.signatureModalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalHeaderTitle}>Proof of Delivery (Signature)</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="camera" size={20} color="#059669" />
+                <Text style={styles.modalHeaderTitle}>Proof of Delivery (POD)</Text>
+              </View>
               <TouchableOpacity onPress={() => setSignatureModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#64748B" />
+                <Ionicons name="close" size={22} color="#64748B" />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalSubtitle}>
-              This parcel requires recipient confirmation prior to marking DELIVERED.
-            </Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 440 }}>
+              {/* Dropoff Type Selector */}
+              <Text style={styles.inputLabel}>Delivery Location / Handover Type</Text>
+              <View style={styles.podTypeSelector}>
+                {(['DOORSTEP', 'HANDOVER', 'SECURITY_DESK'] as const).map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.podTypeBtn,
+                      podPhotoType === type && styles.podTypeBtnActive,
+                    ]}
+                    onPress={() => setPodPhotoType(type)}
+                  >
+                    <Text
+                      style={[
+                        styles.podTypeBtnText,
+                        podPhotoType === type && styles.podTypeBtnTextActive,
+                      ]}
+                    >
+                      {type === 'DOORSTEP'
+                        ? '🏠 Doorstep'
+                        : type === 'HANDOVER'
+                        ? '🤝 Handover'
+                        : '🏢 Gate Desk'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-            <Text style={styles.inputLabel}>Recipient Full Name</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="e.g. Pooja Hegde or Society Security Guard"
-              placeholderTextColor="#94A3B8"
-              value={signerName}
-              onChangeText={setSignerName}
-              testID="signature-name-input"
-            />
+              {/* Photo Capture Section */}
+              <Text style={styles.inputLabel}>Doorstep / Handover Photo</Text>
+              <View style={styles.podPhotoCard}>
+                <Image
+                  source={{
+                    uri:
+                      podPhotoUrl ||
+                      (podPhotoType === 'DOORSTEP'
+                        ? 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=80'
+                        : podPhotoType === 'HANDOVER'
+                        ? 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=80'
+                        : 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=500&auto=format&fit=crop&q=80'),
+                  }}
+                  style={styles.podModalPreview}
+                  resizeMode="cover"
+                />
+                <TouchableOpacity
+                  style={styles.snapPhotoBtn}
+                  onPress={() => {
+                    const photos = [
+                      'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=80',
+                      'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=80',
+                      'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=500&auto=format&fit=crop&q=80',
+                    ];
+                    const next = photos[(photos.indexOf(podPhotoUrl || '') + 1) % photos.length];
+                    setPodPhotoUrl(next);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Snap Photo"
+                >
+                  <Ionicons name="camera-reverse" size={16} color="#FFFFFF" />
+                  <Text style={styles.snapPhotoText}>Retake / Snap POD Photo</Text>
+                </TouchableOpacity>
+              </View>
 
-            {/* Simulated Digital Signature Box */}
-            <View style={styles.signatureBox}>
-              <Ionicons name="pencil" size={20} color="#94A3B8" />
-              <Text style={styles.signaturePlaceholder}>
-                [ Digital Signature Pad Verified on Handheld ]
-              </Text>
-            </View>
+              {/* OTP Verification if applicable */}
+              {order?.packageDetails.otpCode ? (
+                <View style={styles.otpVerifySection}>
+                  <View style={styles.otpVerifyHeader}>
+                    <Text style={styles.inputLabel}>Customer Delivery OTP</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEnteredOtp(order.packageDetails.otpCode || '');
+                        setOtpError(null);
+                      }}
+                    >
+                      <Text style={styles.autoFillOtpText}>Auto-fill ({order.packageDetails.otpCode})</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={[styles.textInput, !!otpError && { borderColor: '#EF4444' }]}
+                    placeholder={`Enter 4-digit code (e.g. ${order.packageDetails.otpCode})`}
+                    placeholderTextColor="#94A3B8"
+                    value={enteredOtp}
+                    onChangeText={(val) => {
+                      setEnteredOtp(val);
+                      setOtpError(null);
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                  />
+                  {otpError ? <Text style={styles.otpErrorMsg}>{otpError}</Text> : null}
+                </View>
+              ) : null}
+
+              <Text style={styles.inputLabel}>Recipient / Receiver Full Name</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder={order?.recipientName || 'e.g. Pooja Hegde'}
+                placeholderTextColor="#94A3B8"
+                value={signerName}
+                onChangeText={setSignerName}
+                testID="signature-name-input"
+              />
+
+              {/* Simulated Handheld Signature Box */}
+              <View style={styles.signatureBox}>
+                <Ionicons name="pencil" size={18} color="#059669" />
+                <Text style={styles.signaturePlaceholder}>
+                  [ Driver Handheld Signature & GPS Geostamp Recorded ]
+                </Text>
+              </View>
+            </ScrollView>
 
             <View style={styles.modalBtnRow}>
               <Button
@@ -478,6 +643,105 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#991B1B',
   },
+  podDossierCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    marginHorizontal: 16,
+    marginVertical: 10,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  podDossierHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  podDossierTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  podDossierTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#065F46',
+    textTransform: 'uppercase',
+  },
+  podTypeChip: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  podTypeChipText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#047857',
+  },
+  podImageWrapper: {
+    width: '100%',
+    height: 190,
+    borderRadius: 10,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 12,
+    backgroundColor: '#E2E8F0',
+  },
+  podImage: {
+    width: '100%',
+    height: '100%',
+  },
+  podWatermark: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  podWatermarkText: {
+    fontSize: 10,
+    color: '#F8FAFC',
+    fontWeight: '600',
+  },
+  podDetailsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 8,
+    padding: 10,
+    gap: 12,
+  },
+  podDetailCol: {
+    flex: 1,
+  },
+  podDetailLabel: {
+    fontSize: 10,
+    color: '#047857',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  podDetailVal: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#064E3B',
+  },
+  podDetailValOtp: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0284C7',
+  },
   timelineCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
@@ -635,6 +899,80 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginTop: 14,
+  },
+  podTypeSelector: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  podTypeBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  podTypeBtnActive: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#059669',
+  },
+  podTypeBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  podTypeBtnTextActive: {
+    color: '#059669',
+  },
+  podPhotoCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  podModalPreview: {
+    width: '100%',
+    height: 120,
+    backgroundColor: '#E2E8F0',
+  },
+  snapPhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#059669',
+    width: '100%',
+    paddingVertical: 8,
+    gap: 6,
+  },
+  snapPhotoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  otpVerifySection: {
+    marginBottom: 10,
+  },
+  otpVerifyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  autoFillOtpText: {
+    fontSize: 11,
+    color: '#0284C7',
+    fontWeight: '700',
+  },
+  otpErrorMsg: {
+    fontSize: 11,
+    color: '#DC2626',
+    fontWeight: '600',
+    marginTop: -8,
+    marginBottom: 10,
   },
 });
 
