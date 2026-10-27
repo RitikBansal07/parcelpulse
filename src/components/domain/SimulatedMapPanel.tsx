@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '../../types/domain';
 import { calculateRouteProgress } from '../../domain/routeSimulator';
@@ -17,25 +17,61 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
     order.distanceKm
   );
 
+  const isDelivered = order.status === 'DELIVERED';
+  const etaMinutes = telemetry.etaMinutes;
+
+  // Calculate approximate arrival clock time
+  const arrivalDate = new Date(Date.now() + etaMinutes * 60 * 1000);
+  const arrivalTimeStr = arrivalDate.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
   return (
     <View style={styles.card} testID="simulated-map-panel">
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Ionicons name="navigate-circle-outline" size={18} color="#0284C7" />
-          <Text style={styles.headerTitle}>Live Map & Route Telemetry</Text>
+      {/* 1. Google Maps Navigation Header (Signature Green Bar) */}
+      <View style={styles.navigationHeader}>
+        <View style={styles.turnIconCircle}>
+          <Ionicons
+            name={
+              isDelivered
+                ? 'checkmark'
+                : order.status === 'ARRIVED'
+                ? 'pin'
+                : 'arrow-redo-sharp'
+            }
+            size={24}
+            color="#FFFFFF"
+          />
         </View>
-        <View style={styles.etaBadge}>
-          <Text style={styles.etaText}>
-            {order.status === 'DELIVERED'
-              ? 'Delivered'
-              : telemetry.etaMinutes > 0
-              ? `ETA ~${telemetry.etaMinutes} min`
-              : 'At Stop'}
+
+        <View style={styles.turnInfoCol}>
+          <Text style={styles.turnDistanceText}>
+            {isDelivered
+              ? 'Destination Reached'
+              : order.status === 'ARRIVED'
+              ? 'Arrived at Destination'
+              : order.status === 'EN_ROUTE'
+              ? 'In 350 m'
+              : 'Staging Hub'}
           </Text>
+          <Text style={styles.turnStreetText} numberOfLines={1}>
+            {isDelivered
+              ? `Delivered to ${order.recipientName}`
+              : order.status === 'ARRIVED'
+              ? order.deliveryAddress.street
+              : order.status === 'EN_ROUTE'
+              ? `Turn right onto 100 Feet Rd towards ${order.deliveryAddress.locality || 'Dropoff'}`
+              : `Depart Koramangala Hub Bay 3 on Tata Ace EV`}
+          </Text>
+        </View>
+
+        <View style={styles.soundMuteBtn}>
+          <Ionicons name="volume-medium" size={20} color="#FFFFFF" />
         </View>
       </View>
 
-      {/* Powered by react-native-maps on iOS/Android, with responsive web tile rendering */}
+      {/* 2. Interactive Map (react-native-maps on Native / Google Maps Canvas on Web) */}
       <View style={styles.mapContainer}>
         <LiveMap
           hubCoord={order.hubAddress}
@@ -46,27 +82,47 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
           recipientName={order.recipientName}
           vehicleName="Tata Ace EV"
           orderStatus={order.status}
-          height={180}
+          height={210}
         />
       </View>
 
-      <View style={styles.footerRow}>
-        <View style={styles.telemetryItem}>
-          <Text style={styles.telemetryLabel}>Progress</Text>
-          <Text style={styles.telemetryValue}>{telemetry.progressPercentage}%</Text>
+      {/* 3. Google Maps Bottom Navigation Bar (ETA, Distance, Arrival Clock) */}
+      <View style={styles.navigationBottomBar}>
+        <View style={styles.bottomLeftCol}>
+          <View style={styles.etaRow}>
+            <Text style={styles.etaMinutesText}>
+              {isDelivered ? '0 min' : `${etaMinutes} min`}
+            </Text>
+            <View style={styles.trafficStatusBadge}>
+              <View style={styles.trafficGreenDot} />
+              <Text style={styles.trafficStatusText}>Live Traffic</Text>
+            </View>
+          </View>
+
+          <View style={styles.routeStatsRow}>
+            <Text style={styles.distanceStatsText}>{telemetry.remainingKm} km</Text>
+            <Text style={styles.dotSeparator}>•</Text>
+            <Text style={styles.arrivalClockText}>{arrivalTimeStr}</Text>
+            <Text style={styles.dotSeparator}>•</Text>
+            <Text style={styles.fastestRouteText}>Fastest route</Text>
+          </View>
         </View>
-        <View style={styles.divider} />
-        <View style={styles.telemetryItem}>
-          <Text style={styles.telemetryLabel}>Remaining</Text>
-          <Text style={styles.telemetryValue}>{telemetry.remainingKm} km</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.telemetryItemWide}>
-          <Text style={styles.telemetryLabel}>Operational Telemetry</Text>
-          <Text style={styles.telemetryValue} numberOfLines={1}>
-            {telemetry.stepDescription}
-          </Text>
-        </View>
+
+        <TouchableOpacity
+          style={styles.closeNavBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Route overview"
+        >
+          <Ionicons name="search" size={18} color="#5F6368" />
+        </TouchableOpacity>
+      </View>
+
+      {/* 4. Telemetry Step Sub-banner */}
+      <View style={styles.telemetryFooter}>
+        <Ionicons name="compass-outline" size={14} color="#1A73E8" />
+        <Text style={styles.telemetryFooterText} numberOfLines={1}>
+          {telemetry.stepDescription}
+        </Text>
       </View>
     </View>
   );
@@ -74,80 +130,148 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     marginHorizontal: 16,
     marginVertical: 10,
-    padding: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#DADCE0',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  header: {
+  navigationHeader: {
+    backgroundColor: '#0F9D58', // Google Maps Navigation Green
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  turnIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  turnInfoCol: {
+    flex: 1,
+  },
+  turnDistanceText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  turnStreetText: {
+    fontSize: 12,
+    color: '#E6F4EA',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  soundMuteBtn: {
+    padding: 6,
+  },
+  mapContainer: {
+    backgroundColor: '#F4F3F0',
+  },
+  navigationBottomBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F3F4',
   },
-  headerLeft: {
+  bottomLeftCol: {
+    flex: 1,
+  },
+  etaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 4,
+  },
+  etaMinutesText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#188038', // Google Maps Signature Green
+    letterSpacing: -0.5,
+  },
+  trafficStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E6F4EA',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    gap: 5,
+  },
+  trafficGreenDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#188038',
+  },
+  trafficStatusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#137333',
+  },
+  routeStatsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  headerTitle: {
-    color: '#F8FAFC',
+  distanceStatsText: {
     fontSize: 13,
+    color: '#5F6368',
     fontWeight: '700',
   },
-  etaBadge: {
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#0284C7',
+  arrivalClockText: {
+    fontSize: 13,
+    color: '#5F6368',
+    fontWeight: '600',
   },
-  etaText: {
-    color: '#38BDF8',
+  fastestRouteText: {
     fontSize: 12,
-    fontWeight: '700',
+    color: '#1A73E8',
+    fontWeight: '600',
   },
-  mapContainer: {
-    borderRadius: 8,
-    overflow: 'hidden',
+  dotSeparator: {
+    fontSize: 11,
+    color: '#BDC1C6',
   },
-  footerRow: {
+  closeNavBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#F1F3F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+  },
+  telemetryFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#ECEFF1',
+    gap: 6,
   },
-  telemetryItem: {
-    alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  telemetryItemWide: {
-    flex: 1,
-    paddingLeft: 8,
-  },
-  telemetryLabel: {
-    fontSize: 10,
-    color: '#64748B',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  telemetryValue: {
+  telemetryFooterText: {
     fontSize: 12,
-    color: '#E2E8F0',
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  divider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#334155',
+    color: '#5F6368',
+    fontWeight: '600',
   },
 });
 
