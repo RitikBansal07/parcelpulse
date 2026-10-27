@@ -178,3 +178,4 @@ Your live frontend will be accessible at:
 ```text
 https://<YOUR_USERNAME>.github.io/parcelpulse/
 ```
+
