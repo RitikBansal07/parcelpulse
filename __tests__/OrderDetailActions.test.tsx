@@ -27,6 +27,7 @@ describe('OrderDetailActions (StatusActionSheet)', () => {
       isFragile: false,
       timeWindow: '08:00 - 10:00 AM',
       category: 'STANDARD',
+      paymentMode: 'UPI_PREPAID',
     },
     timeline: [],
     signatureRequired: requiresSignature,

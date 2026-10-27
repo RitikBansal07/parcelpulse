@@ -80,28 +80,40 @@ export const ManifestListScreen: React.FC = () => {
           <Text style={styles.recipientTitle}>{item.recipientName}</Text>
           <Text style={styles.addressLine} numberOfLines={1}>
             {item.deliveryAddress.street}
-            {item.deliveryAddress.apt ? `, ${item.deliveryAddress.apt}` : ''}
           </Text>
+          {item.deliveryAddress.locality ? (
+            <Text style={styles.localityLine} numberOfLines={1}>
+              📍 {item.deliveryAddress.locality}
+              {item.deliveryAddress.landmark ? ` • Near ${item.deliveryAddress.landmark}` : ''}
+            </Text>
+          ) : null}
         </View>
 
         <View style={styles.cardFooter}>
           <View style={styles.tagRow}>
+            {item.packageDetails.paymentMode === 'COD' ? (
+              <View style={[styles.tag, styles.codTag]}>
+                <Ionicons name="cash-outline" size={12} color="#B45309" />
+                <Text style={[styles.tagText, styles.codTagText]}>
+                  COD ₹{item.packageDetails.codAmountInr?.toLocaleString('en-IN')}
+                </Text>
+              </View>
+            ) : (
+              <View style={[styles.tag, styles.prepaidTag]}>
+                <Ionicons name="shield-checkmark" size={11} color="#15803D" />
+                <Text style={[styles.tagText, styles.prepaidTagText]}>Prepaid</Text>
+              </View>
+            )}
+
             <View style={styles.tag}>
-              <Ionicons name="time-outline" size={13} color="#64748B" />
+              <Ionicons name="time-outline" size={12} color="#64748B" />
               <Text style={styles.tagText}>{item.packageDetails.timeWindow}</Text>
             </View>
 
             {item.packageDetails.requiresSignature && (
               <View style={[styles.tag, styles.sigTag]}>
-                <Ionicons name="pencil" size={12} color="#0369A1" />
+                <Ionicons name="pencil" size={11} color="#0369A1" />
                 <Text style={[styles.tagText, styles.sigTagText]}>Signature</Text>
-              </View>
-            )}
-
-            {item.packageDetails.isFragile && (
-              <View style={[styles.tag, styles.fragileTag]}>
-                <Ionicons name="warning-outline" size={12} color="#B45309" />
-                <Text style={[styles.tagText, styles.fragileTagText]}>Fragile</Text>
               </View>
             )}
           </View>
@@ -123,10 +135,10 @@ export const ManifestListScreen: React.FC = () => {
       <View style={styles.shiftBar}>
         <View style={styles.driverInfo}>
           <Text style={styles.driverName}>
-            {shift?.driverName || 'Marcus Vance'}
+            {shift?.driverName || 'Ramesh Gowda'}
           </Text>
           <Text style={styles.vanDetails}>
-            {shift?.vehiclePlate || 'Sprinter Van #14'} • Shift: {shift?.shiftStartTime || '08:30 AM'}
+            {shift?.vehiclePlate || 'KA 01 EK 4921 (Tata Ace EV)'} • Shift: {shift?.shiftStartTime || '08:30 AM'}
           </Text>
         </View>
 
@@ -333,6 +345,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748B',
   },
+  localityLine: {
+    fontSize: 12,
+    color: '#0284C7',
+    fontWeight: '600',
+    marginTop: 2,
+  },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -358,6 +376,22 @@ const styles = StyleSheet.create({
   },
   sigTag: {
     backgroundColor: '#E0F2FE',
+  },
+  codTag: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  codTagText: {
+    color: '#B45309',
+    fontWeight: '700',
+  },
+  prepaidTag: {
+    backgroundColor: '#DCFCE7',
+  },
+  prepaidTagText: {
+    color: '#15803D',
+    fontWeight: '700',
   },
   fragileTag: {
     backgroundColor: '#FEF3C7',

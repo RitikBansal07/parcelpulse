@@ -23,11 +23,15 @@ export interface LocationCoordinate {
 export interface AddressInfo extends LocationCoordinate {
   street: string;
   apt?: string;
+  landmark?: string;
+  locality?: string;
   city: string;
   state: string;
-  zip: string;
+  zip: string; // Pincode
   name?: string;
 }
+
+export type PaymentMethod = 'UPI_PREPAID' | 'COD' | 'CARD_ONLINE';
 
 export interface PackageSpecs {
   weightKg: number;
@@ -37,6 +41,9 @@ export interface PackageSpecs {
   isFragile: boolean;
   timeWindow: string; // e.g. "09:00 - 11:30 AM"
   category: 'ELECTRONICS' | 'PERISHABLE' | 'STANDARD' | 'DOCUMENTS' | 'OVERSIZED';
+  paymentMode: PaymentMethod;
+  codAmountInr?: number;
+  otpCode?: string; // 4-digit OTP common in Indian logistics (Flipkart/Amazon/Zepto)
 }
 
 export interface StatusTimelineEntry {
@@ -49,8 +56,8 @@ export interface StatusTimelineEntry {
 }
 
 export interface Order {
-  id: string; // e.g. "PP-9421-CA"
-  trackingNumber: string;
+  id: string; // e.g. "PP-8101"
+  trackingNumber: string; // e.g. "DEL-BLR-89210"
   recipientName: string;
   recipientPhone: string;
   deliveryAddress: AddressInfo;
@@ -64,7 +71,7 @@ export interface Order {
   recipientSignature?: string;
   estimatedArrivalMin: number;
   distanceKm: number;
-  currentStepIndex: number; // For route simulation progress
+  currentStepIndex: number;
   hasPendingSync?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -98,10 +105,9 @@ export type NetworkMode = 'ONLINE' | 'OFFLINE' | 'FLAKY_500';
 export interface DriverShift {
   driverId: string;
   driverName: string;
-  vehiclePlate: string;
+  vehiclePlate: string; // e.g. "KA 01 AB 4091 (Tata Ace EV)"
   activeShift: boolean;
   completedStops: number;
   totalStops: number;
   shiftStartTime: string;
 }
-

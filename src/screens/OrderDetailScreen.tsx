@@ -135,25 +135,43 @@ export const OrderDetailScreen: React.FC = () => {
 
             {/* Package Specifications Card */}
             <View style={styles.specsCard}>
-              <Text style={styles.sectionTitle}>Package Specifications</Text>
+              <Text style={styles.sectionTitle}>Package Specifications & Payment</Text>
               <View style={styles.specsGrid}>
                 <View style={styles.specItem}>
                   <Text style={styles.specLabel}>Category</Text>
                   <Text style={styles.specValue}>{order.packageDetails.category}</Text>
                 </View>
                 <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Weight</Text>
-                  <Text style={styles.specValue}>{order.packageDetails.weightKg} kg</Text>
+                  <Text style={styles.specLabel}>Payment Terms</Text>
+                  <Text
+                    style={[
+                      styles.specValue,
+                      order.packageDetails.paymentMode === 'COD' && { color: '#B45309' },
+                    ]}
+                  >
+                    {order.packageDetails.paymentMode === 'COD'
+                      ? `COD: ₹${order.packageDetails.codAmountInr?.toLocaleString('en-IN')}`
+                      : 'UPI Prepaid'}
+                  </Text>
                 </View>
                 <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Dimensions</Text>
-                  <Text style={styles.specValue}>{order.packageDetails.dimensions}</Text>
+                  <Text style={styles.specLabel}>Weight</Text>
+                  <Text style={styles.specValue}>{order.packageDetails.weightKg} kg</Text>
                 </View>
                 <View style={styles.specItem}>
                   <Text style={styles.specLabel}>Window</Text>
                   <Text style={styles.specValue}>{order.packageDetails.timeWindow}</Text>
                 </View>
               </View>
+
+              {order.packageDetails.otpCode && (
+                <View style={styles.otpBanner}>
+                  <Ionicons name="key" size={16} color="#0284C7" />
+                  <Text style={styles.otpBannerText}>
+                    Required Delivery OTP: <Text style={{ fontWeight: '800' }}>{order.packageDetails.otpCode}</Text>
+                  </Text>
+                </View>
+              )}
 
               {order.recipientSignature && (
                 <View style={styles.signatureBadge}>
@@ -230,7 +248,7 @@ export const OrderDetailScreen: React.FC = () => {
             <Text style={styles.inputLabel}>Recipient Full Name</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="e.g. Elena Rostova or Security Guard"
+              placeholder="e.g. Pooja Hegde or Society Security Guard"
               placeholderTextColor="#94A3B8"
               value={signerName}
               onChangeText={setSignerName}
@@ -424,6 +442,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 12,
     gap: 8,
+  },
+  otpBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E0F2FE',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  otpBannerText: {
+    fontSize: 13,
+    color: '#0369A1',
+    fontWeight: '600',
   },
   signatureText: {
     fontSize: 12,

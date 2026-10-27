@@ -95,7 +95,7 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
               fontWeight="bold"
               textAnchor="middle"
             >
-              Hub
+              Hub (Koramangala)
             </SvgText>
           </G>
 
@@ -129,7 +129,7 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
                 fontWeight="bold"
                 textAnchor="middle"
               >
-                Van #14
+                Tata Ace EV
               </SvgText>
             </G>
           )}

@@ -9,7 +9,9 @@ interface CustomerContactCardProps {
 }
 
 export const CustomerContactCard: React.FC<CustomerContactCardProps> = ({ order }) => {
-  const [activeModal, setActiveModal] = useState<'CALL' | 'SMS' | null>(null);
+  const [activeModal, setActiveModal] = useState<'CALL' | 'SMS' | 'WHATSAPP' | null>(null);
+
+  const isCod = order.packageDetails.paymentMode === 'COD';
 
   return (
     <View style={styles.card} testID="customer-contact-card">
@@ -27,7 +29,7 @@ export const CustomerContactCard: React.FC<CustomerContactCardProps> = ({ order 
 
         <View style={styles.infoCol}>
           <Text style={styles.recipientName}>{order.recipientName}</Text>
-          <Text style={styles.phoneText}>Masked: {order.recipientPhone}</Text>
+          <Text style={styles.phoneText}>Masked Proxy: {order.recipientPhone}</Text>
         </View>
 
         <View style={styles.actionButtonsRow}>
@@ -38,7 +40,17 @@ export const CustomerContactCard: React.FC<CustomerContactCardProps> = ({ order 
             accessibilityLabel={`Call ${order.recipientName}`}
             testID="call-customer-btn"
           >
-            <Ionicons name="call" size={18} color="#0284C7" />
+            <Ionicons name="call" size={17} color="#0284C7" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.circleBtn, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
+            onPress={() => setActiveModal('WHATSAPP')}
+            accessibilityRole="button"
+            accessibilityLabel={`WhatsApp ${order.recipientName}`}
+            testID="whatsapp-customer-btn"
+          >
+            <Ionicons name="logo-whatsapp" size={17} color="#16A34A" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -48,36 +60,84 @@ export const CustomerContactCard: React.FC<CustomerContactCardProps> = ({ order 
             accessibilityLabel={`Text ${order.recipientName}`}
             testID="sms-customer-btn"
           >
-            <Ionicons name="chatbubble-ellipses" size={18} color="#0284C7" />
+            <Ionicons name="chatbubble-ellipses" size={17} color="#0284C7" />
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Payment & OTP Badge Row */}
+      <View style={styles.paymentBadgeRow}>
+        <View
+          style={[
+            styles.paymentPill,
+            isCod ? styles.paymentPillCod : styles.paymentPillPrepaid,
+          ]}
+        >
+          <Ionicons
+            name={isCod ? 'cash-outline' : 'shield-checkmark-outline'}
+            size={14}
+            color={isCod ? '#B45309' : '#15803D'}
+          />
+          <Text
+            style={[
+              styles.paymentPillText,
+              isCod ? styles.paymentPillTextCod : styles.paymentPillTextPrepaid,
+            ]}
+          >
+            {isCod
+              ? `Collect Cash: ₹${order.packageDetails.codAmountInr?.toLocaleString('en-IN')}`
+              : 'UPI / Card Prepaid'}
+          </Text>
+        </View>
+
+        {order.packageDetails.otpCode ? (
+          <View style={styles.otpPill}>
+            <Ionicons name="key-outline" size={13} color="#0369A1" />
+            <Text style={styles.otpPillText}>
+              Delivery OTP: <Text style={styles.otpBold}>{order.packageDetails.otpCode}</Text>
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* Address Details with Indian Landmark */}
       <View style={styles.addressBox}>
         <View style={styles.addressHeader}>
-          <Ionicons name="location-sharp" size={16} color="#38BDF8" />
+          <Ionicons name="location-sharp" size={16} color="#0284C7" />
           <Text style={styles.addressTitle}>Destination Address</Text>
         </View>
         <Text style={styles.addressMain}>
           {order.deliveryAddress.street}
-          {order.deliveryAddress.apt ? `, ${order.deliveryAddress.apt}` : ''}
+          {order.deliveryAddress.apt ? ` (${order.deliveryAddress.apt})` : ''}
         </Text>
+
+        {order.deliveryAddress.landmark ? (
+          <View style={styles.landmarkWrap}>
+            <Ionicons name="compass-outline" size={13} color="#64748B" />
+            <Text style={styles.landmarkText}>
+              Landmark: <Text style={{ fontWeight: '700' }}>{order.deliveryAddress.landmark}</Text>
+            </Text>
+          </View>
+        ) : null}
+
         <Text style={styles.addressSub}>
-          {order.deliveryAddress.city}, {order.deliveryAddress.state} {order.deliveryAddress.zip}
+          {order.deliveryAddress.locality ? `${order.deliveryAddress.locality}, ` : ''}
+          {order.deliveryAddress.city}, {order.deliveryAddress.state} — {order.deliveryAddress.zip}
         </Text>
       </View>
 
+      {/* Society / Gate Instructions */}
       {order.packageDetails.instructions ? (
         <View style={styles.instructionsBox}>
           <View style={styles.instructionHeader}>
-            <Ionicons name="document-text-outline" size={14} color="#F59E0B" />
-            <Text style={styles.instructionTitle}>Gate / Delivery Notes</Text>
+            <Ionicons name="document-text-outline" size={14} color="#B45309" />
+            <Text style={styles.instructionTitle}>Society Gate / Delivery Instructions</Text>
           </View>
           <Text style={styles.instructionBody}>{order.packageDetails.instructions}</Text>
         </View>
       ) : null}
 
-      {/* Simulated Call / Text Modal */}
+      {/* Simulated Dialog Modal */}
       <Modal
         visible={activeModal !== null}
         transparent
@@ -86,22 +146,41 @@ export const CustomerContactCard: React.FC<CustomerContactCardProps> = ({ order 
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <View style={styles.modalIconWrap}>
+            <View
+              style={[
+                styles.modalIconWrap,
+                activeModal === 'WHATSAPP' && { backgroundColor: '#DCFCE7' },
+              ]}
+            >
               <Ionicons
-                name={activeModal === 'CALL' ? 'call' : 'chatbox'}
+                name={
+                  activeModal === 'CALL'
+                    ? 'call'
+                    : activeModal === 'WHATSAPP'
+                    ? 'logo-whatsapp'
+                    : 'chatbox'
+                }
                 size={32}
-                color="#0284C7"
+                color={activeModal === 'WHATSAPP' ? '#16A34A' : '#0284C7'}
               />
             </View>
             <Text style={styles.modalTitle}>
-              {activeModal === 'CALL' ? 'Simulated Driver Call' : 'Simulated Driver SMS'}
+              {activeModal === 'CALL'
+                ? 'Simulated Proxy IVR Call'
+                : activeModal === 'WHATSAPP'
+                ? 'Simulated WhatsApp Template'
+                : 'Simulated SMS Gateway'}
             </Text>
             <Text style={styles.modalDesc}>
-              Connecting to recipient via privacy-preserving virtual proxy:
+              Connecting to recipient via privacy-preserving Indian telecom proxy:
               {'\n'}
               <Text style={{ fontWeight: 'bold', color: '#0F172A' }}>
                 {order.recipientPhone} ({order.recipientName})
               </Text>
+              {'\n\n'}
+              {activeModal === 'WHATSAPP'
+                ? 'Template: "Namaste! Your delivery driver from ParcelPulse has arrived at your society gate."'
+                : 'Masked virtual number routing ensures customer phone number remains private.'}
             </Text>
             <Button
               title="Close Simulated Dialog"
@@ -134,7 +213,7 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   avatar: {
     width: 44,
@@ -159,23 +238,74 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   phoneText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748B',
     marginTop: 2,
   },
   actionButtonsRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   circleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#F0F9FF',
     borderWidth: 1,
     borderColor: '#BAE6FD',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  paymentBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+    flexWrap: 'wrap',
+  },
+  paymentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+  },
+  paymentPillPrepaid: {
+    backgroundColor: '#DCFCE7',
+  },
+  paymentPillCod: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  paymentPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  paymentPillTextPrepaid: {
+    color: '#15803D',
+  },
+  paymentPillTextCod: {
+    color: '#B45309',
+  },
+  otpPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+  },
+  otpPillText: {
+    fontSize: 11,
+    color: '#0369A1',
+    fontWeight: '600',
+  },
+  otpBold: {
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   addressBox: {
     backgroundColor: '#F8FAFC',
@@ -198,14 +328,25 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   addressMain: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#0F172A',
+    lineHeight: 20,
+  },
+  landmarkWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  landmarkText: {
+    fontSize: 12,
+    color: '#475569',
   },
   addressSub: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748B',
-    marginTop: 2,
+    marginTop: 4,
   },
   instructionsBox: {
     backgroundColor: '#FFFBEB',
@@ -227,7 +368,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   instructionBody: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#92400E',
     lineHeight: 18,
   },
@@ -256,16 +397,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: '#0F172A',
     marginBottom: 8,
+    textAlign: 'center',
   },
   modalDesc: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#475569',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
   },
 });
-

@@ -30,6 +30,7 @@ describe('Order State Machine', () => {
       isFragile: false,
       timeWindow: '09:00 - 11:00 AM',
       category: 'STANDARD',
+      paymentMode: 'UPI_PREPAID',
     },
     timeline: [],
     signatureRequired: requiresSignature,

@@ -1,7 +1,7 @@
 import { Order, OrderStatus, TransitionEvent, FailureReason } from '../types/domain';
 
 /**
- * Strict Finite State Machine for parcel deliveries.
+ * Strict Finite State Machine for parcel deliveries (Indian Logistics Context).
  * Enforces one-way linear progression or approved recovery loops.
  */
 export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -15,12 +15,36 @@ export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 };
 
 export const FAILURE_REASONS: { code: FailureReason; label: string; description: string }[] = [
-  { code: 'CUSTOMER_UNAVAILABLE', label: 'Customer Unavailable', description: 'Customer did not answer doorbell, intercom, or call.' },
-  { code: 'ACCESS_CODE_REQUIRED', label: 'Access Code Required', description: 'Gated community or building requires access code not provided.' },
-  { code: 'SAFETY_HAZARD', label: 'Safety Hazard / Dog', description: 'Unsecured aggressive animal or unsafe property access.' },
-  { code: 'DAMAGED_PACKAGE', label: 'Damaged in Transit', description: 'Package seal broken or visible damage prior to dropoff.' },
-  { code: 'INCORRECT_ADDRESS', label: 'Incorrect Address', description: 'Building number or apartment does not exist at destination.' },
-  { code: 'BUSINESS_CLOSED', label: 'Business Closed', description: 'Commercial location was closed during attempted delivery window.' },
+  {
+    code: 'CUSTOMER_UNAVAILABLE',
+    label: 'Customer Phone Switched Off / No Answer',
+    description: 'Driver rang doorbell and called customer multiple times; no response received.',
+  },
+  {
+    code: 'ACCESS_CODE_REQUIRED',
+    label: 'Gated Society Entry Denied (MyGate / NoBroker OTP)',
+    description: 'Security guard at main gate refused entry without resident digital approval code.',
+  },
+  {
+    code: 'SAFETY_HAZARD',
+    label: 'Road Waterlogged / Stray Animal Hazard',
+    description: 'Severe monsoon waterlogging or aggressive stray dogs blocked delivery alley.',
+  },
+  {
+    code: 'DAMAGED_PACKAGE',
+    label: 'Packaging Damaged / Tampered Seal',
+    description: 'Outer carton crushed or brand security tape broken during transit.',
+  },
+  {
+    code: 'INCORRECT_ADDRESS',
+    label: 'Missing Landmark / Incomplete Address',
+    description: 'House/flat number not marked clearly on building and pin location inaccurate.',
+  },
+  {
+    code: 'BUSINESS_CLOSED',
+    label: 'Commercial Office / Dukaan Closed',
+    description: 'Commercial establishment or shop shutter down during delivery attempt.',
+  },
 ];
 
 export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
@@ -84,7 +108,7 @@ export function applyTransition(currentOrder: Order, event: TransitionEvent): Or
     id: `tl-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     status: event.toStatus,
     timestamp: event.timestamp || new Date().toISOString(),
-    note: event.failureNote || (event.failureReason ? `Attempt failed: ${event.failureReason}` : `Status updated to ${event.toStatus}`),
+    note: event.failureNote || (event.failureReason ? `Exception: ${event.failureReason}` : `Status updated to ${event.toStatus}`),
     location: event.toStatus === 'DELIVERED' ? `${currentOrder.deliveryAddress.street}` : undefined,
     isSynced: true,
   };
@@ -100,4 +124,3 @@ export function applyTransition(currentOrder: Order, event: TransitionEvent): Or
     updatedAt: new Date().toISOString(),
   };
 }
-
