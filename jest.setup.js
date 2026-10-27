@@ -38,3 +38,23 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
+// Mock react-native-maps
+jest.mock('react-native-maps', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockMapView = (props) => React.createElement(View, { ...props, testID: props.testID || 'mock-map-view' }, props.children);
+  const MockMarker = (props) => React.createElement(View, { ...props, testID: props.testID || 'mock-map-marker' }, props.children);
+  const MockPolyline = (props) => React.createElement(View, { ...props, testID: props.testID || 'mock-map-polyline' });
+  const MockCallout = (props) => React.createElement(View, { ...props, testID: props.testID || 'mock-map-callout' }, props.children);
+
+  return {
+    __esModule: true,
+    default: MockMapView,
+    MapView: MockMapView,
+    Marker: MockMarker,
+    Polyline: MockPolyline,
+    Callout: MockCallout,
+    PROVIDER_GOOGLE: 'google',
+    PROVIDER_DEFAULT: 'default',
+  };
+});

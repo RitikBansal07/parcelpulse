@@ -4,8 +4,8 @@ import { Order, TransitionEvent, DriverShift } from '../types/domain';
 import { INITIAL_ORDERS, INITIAL_DRIVER_SHIFT } from './mockSeedData';
 import { applyTransition } from '../domain/orderStateMachine';
 
-const STORAGE_KEY_ORDERS = '@parcelpulse_orders_v1';
-const STORAGE_KEY_SHIFT = '@parcelpulse_shift_v1';
+const STORAGE_KEY_ORDERS = '@parcelpulse_orders_in_v3';
+const STORAGE_KEY_SHIFT = '@parcelpulse_shift_in_v3';
 
 export class MockParcelPulseApi implements IParcelPulseApi {
   private orders: Order[] = [];
@@ -17,9 +17,26 @@ export class MockParcelPulseApi implements IParcelPulseApi {
     if (this.initialized) return;
 
     try {
+      // Clear legacy US mock data keys if they exist in localStorage/AsyncStorage
+      await AsyncStorage.removeItem('@parcelpulse_orders_v1');
+      await AsyncStorage.removeItem('@parcelpulse_shift_v1');
+
       const storedOrders = await AsyncStorage.getItem(STORAGE_KEY_ORDERS);
       if (storedOrders) {
-        this.orders = JSON.parse(storedOrders);
+        const parsed: Order[] = JSON.parse(storedOrders);
+        // Validate that stored data is in Indian context
+        if (
+          Array.isArray(parsed) &&
+          parsed.length > 0 &&
+          parsed[0]?.deliveryAddress?.city === 'Bengaluru' &&
+          parsed[0]?.packageDetails?.paymentMode
+        ) {
+          this.orders = parsed;
+        } else {
+          // Overwrite stale non-Indian cache
+          this.orders = JSON.parse(JSON.stringify(INITIAL_ORDERS));
+          await AsyncStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(this.orders));
+        }
       } else {
         this.orders = JSON.parse(JSON.stringify(INITIAL_ORDERS));
         await AsyncStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(this.orders));
@@ -27,7 +44,13 @@ export class MockParcelPulseApi implements IParcelPulseApi {
 
       const storedShift = await AsyncStorage.getItem(STORAGE_KEY_SHIFT);
       if (storedShift) {
-        this.shift = JSON.parse(storedShift);
+        const parsedShift = JSON.parse(storedShift);
+        if (parsedShift?.driverName === 'Ramesh Gowda' || parsedShift?.driverName?.includes('Gowda')) {
+          this.shift = parsedShift;
+        } else {
+          this.shift = { ...INITIAL_DRIVER_SHIFT };
+          await AsyncStorage.setItem(STORAGE_KEY_SHIFT, JSON.stringify(this.shift));
+        }
       } else {
         this.shift = { ...INITIAL_DRIVER_SHIFT };
         await AsyncStorage.setItem(STORAGE_KEY_SHIFT, JSON.stringify(this.shift));
@@ -113,6 +136,8 @@ export class MockParcelPulseApi implements IParcelPulseApi {
     this.orders = JSON.parse(JSON.stringify(INITIAL_ORDERS));
     this.shift = { ...INITIAL_DRIVER_SHIFT };
     try {
+      await AsyncStorage.removeItem('@parcelpulse_orders_v1');
+      await AsyncStorage.removeItem('@parcelpulse_shift_v1');
       await AsyncStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(this.orders));
       await AsyncStorage.setItem(STORAGE_KEY_SHIFT, JSON.stringify(this.shift));
     } catch {
@@ -123,4 +148,3 @@ export class MockParcelPulseApi implements IParcelPulseApi {
 }
 
 export const mockApi = new MockParcelPulseApi();
-

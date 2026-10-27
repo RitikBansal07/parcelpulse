@@ -31,12 +31,22 @@ export const ActiveOrderBanner: React.FC<ActiveOrderBannerProps> = ({ activeOrde
 
       <View style={styles.contentRow}>
         <View style={styles.infoCol}>
-          <Text style={styles.recipientName} numberOfLines={1}>
-            {activeOrder.recipientName}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={styles.recipientName} numberOfLines={1}>
+              {activeOrder.recipientName}
+            </Text>
+            {activeOrder.packageDetails.paymentMode === 'COD' && (
+              <View style={styles.codBadge}>
+                <Text style={styles.codBadgeText}>
+                  COD ₹{activeOrder.packageDetails.codAmountInr?.toLocaleString('en-IN')}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.addressText} numberOfLines={1}>
-            {activeOrder.deliveryAddress.street}
-            {activeOrder.deliveryAddress.apt ? `, ${activeOrder.deliveryAddress.apt}` : ''}
+            {activeOrder.deliveryAddress.locality
+              ? `📍 ${activeOrder.deliveryAddress.locality} • ${activeOrder.deliveryAddress.street}`
+              : activeOrder.deliveryAddress.street}
           </Text>
         </View>
 
@@ -101,6 +111,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#F8FAFC',
     marginBottom: 2,
+  },
+  codBadge: {
+    backgroundColor: '#78350F',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  codBadgeText: {
+    color: '#FDE68A',
+    fontSize: 10,
+    fontWeight: '800',
   },
   addressText: {
     fontSize: 13,

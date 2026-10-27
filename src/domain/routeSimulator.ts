@@ -26,37 +26,37 @@ export function calculateRouteProgress(
     case 'ASSIGNED':
       progressRatio = 0.05;
       etaMinutes = 25;
-      stepDescription = 'Manifest assigned • Staged at Central Hub';
+      stepDescription = 'Staged at Koramangala Hub • Loading Bay 3';
       break;
     case 'PICKED_UP':
       progressRatio = 0.15;
       etaMinutes = 20;
-      stepDescription = 'Scanned & loaded onto vehicle • Departing hub';
+      stepDescription = 'Loaded on Tata Ace EV • Departing Koramangala Hub';
       break;
     case 'EN_ROUTE':
       progressRatio = 0.60;
       etaMinutes = 10;
-      stepDescription = 'Driver in transit • Approaching delivery zone';
+      stepDescription = 'Driver in transit • Approaching delivery locality';
       break;
     case 'ARRIVED':
       progressRatio = 0.95;
       etaMinutes = 2;
-      stepDescription = 'Driver arrived on scene • At customer curb';
+      stepDescription = 'Arrived at society gate / building entrance';
       break;
     case 'DELIVERED':
       progressRatio = 1.0;
       etaMinutes = 0;
-      stepDescription = 'Completed • Delivered & verified';
+      stepDescription = 'Completed • Handed over & OTP/Signature verified';
       break;
     case 'FAILED_ATTEMPT':
       progressRatio = 0.95;
       etaMinutes = 0;
-      stepDescription = 'Attempt recorded • Awaiting re-route or return';
+      stepDescription = 'Exception recorded • Awaiting re-route or Hub return';
       break;
     case 'RETURNED_TO_HUB':
       progressRatio = 0.0;
       etaMinutes = 0;
-      stepDescription = 'Returned to Hub • Checked into inventory';
+      stepDescription = 'Returned to Koramangala Hub • Re-checked into inventory';
       break;
     default:
       progressRatio = 0;

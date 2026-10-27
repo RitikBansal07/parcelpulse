@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Rect, Line, Circle, Polyline, Text as SvgText, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '../../types/domain';
-import { calculateRouteProgress, projectToSvg } from '../../domain/routeSimulator';
+import { calculateRouteProgress } from '../../domain/routeSimulator';
+import { LiveMap } from './LiveMap';
 
 interface SimulatedMapPanelProps {
   order: Order;
@@ -17,30 +17,12 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
     order.distanceKm
   );
 
-  // Compute bounding box around hub and dropoff coordinates
-  const bounds = {
-    minLat: Math.min(order.hubAddress.lat, order.deliveryAddress.lat) - 0.005,
-    maxLat: Math.max(order.hubAddress.lat, order.deliveryAddress.lat) + 0.005,
-    minLng: Math.min(order.hubAddress.lng, order.deliveryAddress.lng) - 0.005,
-    maxLng: Math.max(order.hubAddress.lng, order.deliveryAddress.lng) + 0.005,
-  };
-
-  const svgWidth = 340;
-  const svgHeight = 180;
-
-  const hubSvg = projectToSvg(order.hubAddress, bounds, svgWidth, svgHeight);
-  const dropoffSvg = projectToSvg(order.deliveryAddress, bounds, svgWidth, svgHeight);
-  const driverSvg = projectToSvg(telemetry.driverLocation, bounds, svgWidth, svgHeight);
-
-  // Intermediate waypoint coordinate for realistic street grid turn
-  const waypointSvg = { x: hubSvg.x, y: dropoffSvg.y };
-
   return (
     <View style={styles.card} testID="simulated-map-panel">
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="navigate-circle-outline" size={18} color="#0284C7" />
-          <Text style={styles.headerTitle}>Simulated Route Telemetry</Text>
+          <Text style={styles.headerTitle}>Live Map & Route Telemetry</Text>
         </View>
         <View style={styles.etaBadge}>
           <Text style={styles.etaText}>
@@ -53,87 +35,19 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
         </View>
       </View>
 
-      <View style={styles.svgContainer}>
-        <Svg width="100%" height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
-          {/* Street grid background lines */}
-          <Rect x="0" y="0" width={svgWidth} height={svgHeight} fill="#0F172A" rx={8} />
-
-          {/* Grid lines simulating city blocks */}
-          <Line x1="0" y1="45" x2={svgWidth} y2="45" stroke="#1E293B" strokeWidth="1" />
-          <Line x1="0" y1="90" x2={svgWidth} y2="90" stroke="#1E293B" strokeWidth="1" />
-          <Line x1="0" y1="135" x2={svgWidth} y2="135" stroke="#1E293B" strokeWidth="1" />
-          <Line x1="85" y1="0" x2="85" y2={svgHeight} stroke="#1E293B" strokeWidth="1" />
-          <Line x1="170" y1="0" x2="170" y2={svgHeight} stroke="#1E293B" strokeWidth="1" />
-          <Line x1="255" y1="0" x2="255" y2={svgHeight} stroke="#1E293B" strokeWidth="1" />
-
-          {/* Base Route Polyline */}
-          <Polyline
-            points={`${hubSvg.x},${hubSvg.y} ${waypointSvg.x},${waypointSvg.y} ${dropoffSvg.x},${dropoffSvg.y}`}
-            fill="none"
-            stroke="#334155"
-            strokeWidth="4"
-            strokeDasharray="4,4"
-          />
-
-          {/* Completed portion highlight */}
-          <Polyline
-            points={`${hubSvg.x},${hubSvg.y} ${driverSvg.x},${driverSvg.y}`}
-            fill="none"
-            stroke="#0284C7"
-            strokeWidth="4"
-          />
-
-          {/* Hub Pin */}
-          <G>
-            <Circle cx={hubSvg.x} cy={hubSvg.y} r="8" fill="#64748B" />
-            <Circle cx={hubSvg.x} cy={hubSvg.y} r="4" fill="#FFFFFF" />
-            <SvgText
-              x={hubSvg.x}
-              y={hubSvg.y + 18}
-              fill="#94A3B8"
-              fontSize="10"
-              fontWeight="bold"
-              textAnchor="middle"
-            >
-              Hub (Koramangala)
-            </SvgText>
-          </G>
-
-          {/* Customer Dropoff Pin */}
-          <G>
-            <Circle cx={dropoffSvg.x} cy={dropoffSvg.y} r="9" fill="#10B981" />
-            <Circle cx={dropoffSvg.x} cy={dropoffSvg.y} r="4" fill="#FFFFFF" />
-            <SvgText
-              x={dropoffSvg.x}
-              y={dropoffSvg.y - 12}
-              fill="#10B981"
-              fontSize="10"
-              fontWeight="bold"
-              textAnchor="middle"
-            >
-              Dropoff
-            </SvgText>
-          </G>
-
-          {/* Driver Vehicle Location Pin */}
-          {order.status !== 'DELIVERED' && order.status !== 'RETURNED_TO_HUB' && (
-            <G>
-              <Circle cx={driverSvg.x} cy={driverSvg.y} r="12" fill="rgba(56, 189, 248, 0.25)" />
-              <Circle cx={driverSvg.x} cy={driverSvg.y} r="7" fill="#0284C7" />
-              <Circle cx={driverSvg.x} cy={driverSvg.y} r="3" fill="#FFFFFF" />
-              <SvgText
-                x={driverSvg.x}
-                y={driverSvg.y + 18}
-                fill="#38BDF8"
-                fontSize="10"
-                fontWeight="bold"
-                textAnchor="middle"
-              >
-                Tata Ace EV
-              </SvgText>
-            </G>
-          )}
-        </Svg>
+      {/* Powered by react-native-maps on iOS/Android, with responsive web tile rendering */}
+      <View style={styles.mapContainer}>
+        <LiveMap
+          hubCoord={order.hubAddress}
+          dropoffCoord={order.deliveryAddress}
+          driverCoord={telemetry.driverLocation}
+          hubName="Bengaluru Koramangala Hub #12"
+          dropoffName={order.deliveryAddress.locality || order.recipientName}
+          recipientName={order.recipientName}
+          vehicleName="Tata Ace EV"
+          orderStatus={order.status}
+          height={180}
+        />
       </View>
 
       <View style={styles.footerRow}>
@@ -148,7 +62,7 @@ export const SimulatedMapPanel: React.FC<SimulatedMapPanelProps> = ({ order }) =
         </View>
         <View style={styles.divider} />
         <View style={styles.telemetryItemWide}>
-          <Text style={styles.telemetryLabel}>Status Note</Text>
+          <Text style={styles.telemetryLabel}>Operational Telemetry</Text>
           <Text style={styles.telemetryValue} numberOfLines={1}>
             {telemetry.stepDescription}
           </Text>
@@ -197,7 +111,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  svgContainer: {
+  mapContainer: {
     borderRadius: 8,
     overflow: 'hidden',
   },
@@ -237,3 +151,4 @@ const styles = StyleSheet.create({
   },
 });
 
+export default SimulatedMapPanel;
